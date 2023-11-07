@@ -41,7 +41,7 @@ def precision(scores, labels, binary=False):
     if binary:
         s = metrics.precision_score(labels, scores.argmax(-1), average='binary')
     else:
-        s = metrics.precision_score(labels, scores.argmax(-1), average='micro')
+        s = metrics.precision_score(labels, scores.argmax(-1), average='macro')
     return s
 
 
@@ -59,7 +59,7 @@ def recall(scores, labels, binary=False):
     if binary:
         s = metrics.recall_score(labels, scores.argmax(-1), average='binary')
     else:
-        s = metrics.recall_score(labels, scores.argmax(-1), average='micro')
+        s = metrics.recall_score(labels, scores.argmax(-1), average='macro')
     return s
 
 
@@ -77,7 +77,7 @@ def f1(scores, labels, binary=False):
     if binary:
         s = metrics.f1_score(labels, scores.argmax(-1), average='binary')
     else:
-        s = metrics.f1_score(labels, scores.argmax(-1), average='micro')
+        s = metrics.f1_score(labels, scores.argmax(-1), average='macro')
     return s
 
 
@@ -111,3 +111,9 @@ def get_topk(topk, return_correct_num=False):
 
     setattr(topk_metric, '__qualname__', 'top' + str(topk))
     return topk_metric
+
+
+if __name__ == '__main__':
+    scores = torch.rand(1000,10)
+    labels = torch.randint(0,10,size=(1000,))
+    print(acc(scores,labels),precision(scores,labels),recall(scores,labels),f1(scores,labels))
