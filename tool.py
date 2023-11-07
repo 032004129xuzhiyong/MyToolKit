@@ -105,15 +105,16 @@ def print_dicts_tablefmt(dicts:List[Dict], headers:Union[str,List[str]]='keys', 
     print(tabulate(df,headers=headers,tablefmt=tablefmt))
 
 
-def modify_dict_with_hp(config_dict, hp, training=True):
+def modify_dict_with_hp(config_dict, hp, bool_tuner=True):
     """
     modify config_dict with hyperparameters for searching of keras_tuner.
     :param config_dict: config dictionary
     :param hp: hyperparameters
+    :param bool_tuner: 是否正在tuner，如果是，调用hp方法，如果不是，hp为dict
     :return:
         modified config_dict
     """
-    if not training: #best hp
+    if not bool_tuner: #best hp
         best_hp_dict = hp if isinstance(hp,dict) else hp.values
 
     for key in config_dict.keys():
@@ -122,18 +123,18 @@ def modify_dict_with_hp(config_dict, hp, training=True):
             if 'type' in value.keys(): #需要修改
                 if value['type'] == 'int':
                     step = value['step']  if 'step' in value.keys() else None
-                    config_dict[key] = hp.Int(key,value['min'],value['max'],step) if training else best_hp_dict[key]
+                    config_dict[key] = hp.Int(key,value['min'],value['max'],step) if bool_tuner else best_hp_dict[key]
                 elif value['type'] == 'float':
                     step = value['step'] if 'step' in value.keys() else None
-                    config_dict[key] = hp.Float(key,value['min'],value['max'],step) if training else best_hp_dict[key]
+                    config_dict[key] = hp.Float(key,value['min'],value['max'],step) if bool_tuner else best_hp_dict[key]
                 elif value['type'] == 'list':
-                    config_dict[key] = hp.Choice(key,value['list']) if training else best_hp_dict[key]
+                    config_dict[key] = hp.Choice(key,value['list']) if bool_tuner else best_hp_dict[key]
                 elif value['type'] == 'bool':
-                    config_dict[key] = hp.Boolean(key) if training else best_hp_dict[key]
+                    config_dict[key] = hp.Boolean(key) if bool_tuner else best_hp_dict[key]
                 else:
                     raise Exception('unknown type!!!')
             else:
-                config_dict[key] = modify_dict_with_hp(value,hp,training)
+                config_dict[key] = modify_dict_with_hp(value,hp,bool_tuner)
         else: #一个数
             pass
     return config_dict
