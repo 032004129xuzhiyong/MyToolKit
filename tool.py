@@ -106,6 +106,12 @@ def print_dicts_tablefmt(dicts:List[Dict], headers:Union[str,List[str]]='keys', 
 
 
 def has_hyperparameter(config_dict):
+    """
+    whether to have mytorch.MyHyperParameter
+    :param config_dict: Dict
+    :return:
+        bool
+    """
     for key in config_dict.keys():
         value = config_dict[key]
         if isinstance(value,dict):
