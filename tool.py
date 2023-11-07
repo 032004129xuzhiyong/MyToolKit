@@ -105,6 +105,20 @@ def print_dicts_tablefmt(dicts:List[Dict], headers:Union[str,List[str]]='keys', 
     print(tabulate(df,headers=headers,tablefmt=tablefmt))
 
 
+def has_hyperparameter(config_dict):
+    for key in config_dict.keys():
+        value = config_dict[key]
+        if isinstance(value,dict):
+            if 'type' in value.keys():
+                return True
+            else:
+                if has_hyperparameter(value): return True
+                else: pass
+        else:
+            pass
+    return False
+
+
 def modify_dict_with_hp(config_dict, hp, bool_tuner=True):
     """
     modify config_dict with hyperparameters for searching of keras_tuner.
