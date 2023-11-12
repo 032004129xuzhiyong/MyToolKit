@@ -253,7 +253,8 @@ def compute_metric(outputs, labels, metric_list):
 
 
 def fit(model, dataload, epochs, compile_kw,
-        device=None, val_dataload=None, loss_weights=None, callbacks=[]):
+        device=None, val_dataload=None, loss_weights=None, callbacks=[],
+        quiet=False):
     """
     similar to tf.keras.Model.fit
     :param model: torch model
@@ -286,7 +287,7 @@ def fit(model, dataload, epochs, compile_kw,
     callbacklist = callbacks if isinstance(callbacks, CallbackList) else CallbackList(callbacks,
                                                                                       model=model, params={
             'optimizer': compile_kw['optimizer']})
-    callbacklist.append(PrintCallback(epochs, steps_per_epoch))
+    callbacklist.append(PrintCallback(epochs, steps_per_epoch,quiet=quiet))
 
     # train begin
     callbacklist.on_train_begin(logs=None)
@@ -561,14 +562,14 @@ class MyHyperParameter:
 
 
 class MyTuner:
-    def __init__(self, max_trials, executions_per_trial=1, mode='min'):
+    def __init__(self, max_trials, executions_per_trial=1, mode='min', quiet=False):
         self.max_trials = max_trials
         self.executions_per_trial = executions_per_trial
         self.mode = mode
         self.hp = MyHyperParameter()
         self.configdict_list = []
         self.flag_list = []
-        self.callbacklist = CallbackList([MyTunerPrintCallback(max_trials, executions_per_trial)])
+        self.callbacklist = CallbackList([MyTunerPrintCallback(max_trials, executions_per_trial, quiet)])
 
     def run_trial(self, hp, **kwargs):
         #it will be rewritten.
@@ -773,19 +774,22 @@ class PrintCallback(Callback):
     """
 
     def __init__(self, total_epochs, steps_per_epoch,
-                 batch_sep=100, if_micro_average=True, **kwargs):
+                 batch_sep=100, if_micro_average=True, quiet=False, **kwargs):
         super().__init__(**kwargs)
         self.total_epochs = total_epochs
         self.steps_per_epoch = steps_per_epoch
         self.batch_sep = batch_sep
         self.if_micro_average = if_micro_average
+        self.quiet = quiet
         self.micro_batch_history = History()
 
     def on_train_begin(self, logs=None):
-        print('Begin Train!')
+        if not self.quiet:
+            print('Begin Train!')
 
     def on_train_end(self, logs=None):
-        print('End Train!')
+        if not self.quiet:
+            print('End Train!')
 
     def on_train_batch_begin(self, batch, logs=None):
         pass
@@ -801,18 +805,21 @@ class PrintCallback(Callback):
                 self.micro_batch_history.clear()
             for key in logs.keys():
                 print_str += f' {key} {logs[key]}'
-            print(print_str)
+            if not self.quiet:
+                print(print_str)
         else:
             pass
 
     def on_epoch_begin(self, epoch, logs=None):
-        print('=' * 20, f'[{epoch:04d}/{self.total_epochs:04d}]', ' Epoch ', f'{epoch} ', '=' * 20)
+        if not self.quiet:
+            print('=' * 20, f'[{epoch:04d}/{self.total_epochs:04d}]', ' Epoch ', f'{epoch} ', '=' * 20)
 
     def on_epoch_end(self, epoch, logs=None):
         print_str = f'Epoch {epoch}'
         for key in logs.keys():
             print_str += f' {key} {logs[key]}'
-        print(print_str)
+        if not self.quiet:
+            print(print_str)
 
 
 class DfSaveCallback(Callback):
@@ -849,7 +856,7 @@ class EarlyStoppingCallback(Callback):
     """
 
     def __init__(self, checkpoint_dir, monitor='val_loss', min_delta=0, patience=0,
-                 mode='auto', baseline=None, restore_best_weights=False, save_best_only=False, **kwargs):
+                 mode='auto', baseline=None, restore_best_weights=False, save_best_only=False, quiet=False, **kwargs):
         super().__init__(**kwargs)
         self.checkpoint_dir = checkpoint_dir
         if not os.path.exists(checkpoint_dir):
@@ -864,6 +871,7 @@ class EarlyStoppingCallback(Callback):
         self.baseline = baseline
         self.restore_best_weights = restore_best_weights
         self.save_best_only = save_best_only
+        self.quit = quiet
 
         self.patience_flag = patience
         self.last_loss = float('inf') if self.mode == 'min' else None
@@ -935,7 +943,8 @@ class EarlyStoppingCallback(Callback):
                     if self.patience_flag == -1: break_flag = True
 
         if break_flag:
-            print('*' * 20, 'EarlyStopping!', '*' * 20)
+            if not self.quit:
+                print('*' * 20, 'EarlyStopping!', '*' * 20)
             return True
 
 
@@ -1008,34 +1017,41 @@ class TunerRemovePreFileInDir(Callback):
 
 
 class MyTunerPrintCallback(Callback):
-    def __init__(self, max_trials, executions_per_trial):
+    def __init__(self, max_trials, executions_per_trial, quiet=False):
         super().__init__()
         self.max_trials = max_trials
         self.executions_per_trial = executions_per_trial
+        self.quit = quiet
 
     def on_train_begin(self, logs=None):
-        print('Start Tuner!\n')
+        if not self.quit:
+            print('Start Tuner!\n')
 
     def on_train_end(self, logs=None):
-        print('End Tuner!\n')
+        if not self.quit:
+            print('End Tuner!\n')
 
     def on_train_batch_begin(self, batch, logs=None):
-        print(f'Start Repeat #{batch}/{self.executions_per_trial}')
+        if not self.quit:
+            print(f'Start Repeat #{batch}/{self.executions_per_trial}')
 
     def on_train_batch_end(self, batch, logs=None):
         #flag, time
-        print(f'End Repeat #{batch}/{self.executions_per_trial}',
-              '\tRepeat time: ', logs['time'],
-              '\tRepeat flag: ', logs['flag'])
+        if not self.quit:
+            print(f'End Repeat #{batch}/{self.executions_per_trial}',
+                  '\tRepeat time: ', logs['time'],
+                  '\tRepeat flag: ', logs['flag'])
 
     def on_epoch_begin(self, epoch, logs=None):  # only for train
-        print(f'Start Trial #{epoch}/{self.max_trials}')
+        if not self.quit:
+            print(f'Start Trial #{epoch}/{self.max_trials}')
 
     def on_epoch_end(self, epoch, logs=None):  # only for train
-        print(f'End Trial #{epoch}/{self.max_trials}',
-              '\tUntil now total time: ', logs['time'],
-              '\tCurrent flag: ', logs['cur_flag'],
-              '\tBest flag: ', logs['best_flag'])
+        if not self.quit:
+            print(f'End Trial #{epoch}/{self.max_trials}',
+                  '\tUntil now total time: ', logs['time'],
+                  '\tCurrent flag: ', logs['cur_flag'],
+                  '\tBest flag: ', logs['best_flag'])
 
         cur_configdict = logs['cur_configdict']
         best_configdict = logs['best_configdict']
