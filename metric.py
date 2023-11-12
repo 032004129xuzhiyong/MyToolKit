@@ -39,9 +39,9 @@ def precision(scores, labels, binary=False):
         precision
     """
     if binary:
-        s = metrics.precision_score(labels, scores.argmax(-1), average='binary')
+        s = metrics.precision_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
     else:
-        s = metrics.precision_score(labels, scores.argmax(-1), average='macro')
+        s = metrics.precision_score(labels, scores.argmax(-1), average='macro', zero_division=0.0)
     return s
 
 
@@ -57,9 +57,9 @@ def recall(scores, labels, binary=False):
         recall
     """
     if binary:
-        s = metrics.recall_score(labels, scores.argmax(-1), average='binary')
+        s = metrics.recall_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
     else:
-        s = metrics.recall_score(labels, scores.argmax(-1), average='macro')
+        s = metrics.recall_score(labels, scores.argmax(-1), average='macro', zero_division=0.0)
     return s
 
 
@@ -75,9 +75,9 @@ def f1(scores, labels, binary=False):
         f1_score
     """
     if binary:
-        s = metrics.f1_score(labels, scores.argmax(-1), average='binary')
+        s = metrics.f1_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
     else:
-        s = metrics.f1_score(labels, scores.argmax(-1), average='macro')
+        s = metrics.f1_score(labels, scores.argmax(-1), average='macro', zero_division=0.0)
     return s
 
 
