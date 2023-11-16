@@ -1,10 +1,11 @@
-# -*- coding:utf-8 -*-
+    # -*- coding:utf-8 -*-
 """
 作者：DELL
 日期：2023年10月23日
 """
 from sklearn import metrics
 import torch
+import torch.nn.functional as F
 
 
 ###################################################################
@@ -16,27 +17,29 @@ import torch
 
 def acc(scores, labels):
     """
-    Accuracy
+    Computes the accuracy of a model's predictions.
+
     Args:
-        scores: 2D torch.tensor
-        labels: 1D
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
 
     Returns:
-        acc
+        float: The accuracy of the model.
     """
     return (scores.argmax(-1) == labels).float().mean()
 
 
 def precision(scores, labels, binary=False):
     """
-    Precision
+    Calculates the precision score for a given set of predictions and labels.
+
     Args:
-        scores: 2D torch.tensor
-        labels: 1D
-        binary: bool
+        scores: 2D torch.tensor containing the predicted scores for each class.
+        labels: 1D tensor containing the true labels for each prediction.
+        binary: bool indicating whether to calculate precision for binary classification or not.
 
     Returns:
-        precision
+        precision score as a float.
     """
     if binary:
         s = metrics.precision_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -47,14 +50,15 @@ def precision(scores, labels, binary=False):
 
 def recall(scores, labels, binary=False):
     """
-    recall
+    Calculate recall score.
+
     Args:
-        scores: 2D torch.tensor
-        labels: 1D
-        binary:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+        binary (bool, optional): If True, calculate binary recall. Default is False.
 
     Returns:
-        recall
+        float: The recall score.
     """
     if binary:
         s = metrics.recall_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -65,14 +69,15 @@ def recall(scores, labels, binary=False):
 
 def f1(scores, labels, binary=False):
     """
-    f1_score
+    Calculate the F1 score.
+
     Args:
-        scores: 2D torch.tensor
-        labels: 1D
-        binary:
+        scores (torch.Tensor): 2D tensor of predicted scores.
+        labels (torch.Tensor): 1D tensor of true labels.
+        binary (bool): Whether to calculate the F1 score for binary classification or not.
 
     Returns:
-        f1_score
+        float: The F1 score.
     """
     if binary:
         s = metrics.f1_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -83,24 +88,25 @@ def f1(scores, labels, binary=False):
 
 def get_topk(topk, return_correct_num=False):
     """
-    get topk function
+    Returns a function that calculates the top-k accuracy metric for a given k.
+
     Args:
-        topk: int >=1
-        return_correct_num: bool whether to return correct number from topk_func
+        topk (int): The value of k for which the top-k accuracy metric is to be calculated. Must be >= 1.
+        return_correct_num (bool): Whether to return the number of correct predictions instead of the accuracy score.
 
     Returns:
-        topk_func
+        A function that calculates the top-k accuracy metric for a given set of scores and labels.
     """
-
     def topk_metric(scores, labels):
         """
-        topk metric
+        Computes the top-k accuracy score for a given set of predicted scores and true labels.
+
         Args:
-            scores: 2D torch.tensor
-            labels: 1D
+            scores (torch.Tensor): A 2D tensor of predicted scores.
+            labels (torch.Tensor): A 1D tensor of true labels.
 
         Returns:
-            topk_metric
+            The top-k accuracy score.
         """
         if return_correct_num:
             num = metrics.top_k_accuracy_score(labels, scores, k=topk, normalize=False, labels=range(scores.shape[-1]))
@@ -113,7 +119,21 @@ def get_topk(topk, return_correct_num=False):
     return topk_metric
 
 
+
+def auc_metric(scores, labels):
+    """
+    Computes the area under the ROC curve (AUC) score for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The AUC score.
+    """
+    scores_softmax = F.softmax(scores, dim=1)
+    return metrics.roc_auc_score(labels, scores_softmax, multi_class='ovr')
+
+
 if __name__ == '__main__':
-    scores = torch.rand(1000,10)
-    labels = torch.randint(0,10,size=(1000,))
-    print(acc(scores,labels),precision(scores,labels),recall(scores,labels),f1(scores,labels))
+    pass
