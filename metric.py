@@ -24,7 +24,7 @@ def acc(scores, labels):
         labels (torch.Tensor): A 1D tensor of true labels.
 
     Returns:
-        float: The accuracy of the model.
+        float: The accuracy of the model. The higher the better. Its range is [0, 1].
     """
     return (scores.argmax(-1) == labels).float().mean()
 
@@ -39,7 +39,7 @@ def precision(scores, labels, binary=False):
         binary: bool indicating whether to calculate precision for binary classification or not.
 
     Returns:
-        precision score as a float.
+        precision score as a float: The higher the better. Its range is [0, 1].
     """
     if binary:
         s = metrics.precision_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -58,7 +58,7 @@ def recall(scores, labels, binary=False):
         binary (bool, optional): If True, calculate binary recall. Default is False.
 
     Returns:
-        float: The recall score.
+        float: The recall score: The higher the better. Its range is [0, 1].
     """
     if binary:
         s = metrics.recall_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -77,7 +77,7 @@ def f1(scores, labels, binary=False):
         binary (bool): Whether to calculate the F1 score for binary classification or not.
 
     Returns:
-        float: The F1 score.
+        float: The F1 score: The higher the better. Its range is [0, 1].
     """
     if binary:
         s = metrics.f1_score(labels, scores.argmax(-1), average='binary', zero_division=0.0)
@@ -119,7 +119,6 @@ def get_topk(topk, return_correct_num=False):
     return topk_metric
 
 
-
 def auc_metric(scores, labels):
     """
     Computes the area under the ROC curve (AUC) score for a given set of predicted scores and true labels.
@@ -129,11 +128,82 @@ def auc_metric(scores, labels):
         labels (torch.Tensor): A 1D tensor of true labels.
 
     Returns:
-        The AUC score.
+        The AUC score: The higher the better. Its range is [0, 1].
     """
     scores_softmax = F.softmax(scores, dim=1)
     return metrics.roc_auc_score(labels, scores_softmax, multi_class='ovr')
 
 
-if __name__ == '__main__':
-    pass
+def roc_auc_score(scores, labels):
+    """
+    Computes the ROC AUC score for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The ROC AUC score: The higher the better. Its range is [0, 1].
+    """
+    scores_softmax = F.softmax(scores, dim=1)
+    return metrics.roc_auc_score(labels, scores_softmax, multi_class='ovr')
+
+
+def matthews_corrcoef(scores, labels):
+    """
+    Computes the Matthews correlation coefficient (MCC) for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The MCC score: The higher the better. Its range is [-1, 1].
+    """
+    scores = scores.argmax(-1)
+    return metrics.matthews_corrcoef(labels, scores)
+
+
+def hamming_loss(scores, labels):
+    """
+    Computes the hamming loss for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The hamming loss: The lower the better. Its range is [0, 1]
+    """
+    scores = scores.argmax(-1)
+    return metrics.hamming_loss(labels, scores)
+
+
+def zero_one_loss(scores, labels):
+    """
+    Computes the zero one loss for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The zero one loss: The lower the better. Its range is [0, 1]. Because normalize is True by default.
+    """
+    scores = scores.argmax(-1)
+    return metrics.zero_one_loss(labels, scores)
+
+
+def confusion_matrix(scores, labels):
+    """
+    Computes the confusion matrix for a given set of predicted scores and true labels.
+
+    Args:
+        scores (torch.Tensor): A 2D tensor of predicted scores.
+        labels (torch.Tensor): A 1D tensor of true labels.
+
+    Returns:
+        The confusion matrix. The shape is (num_classes, num_classes).
+    """
+    scores = scores.argmax(-1)
+    return metrics.confusion_matrix(labels, scores)
