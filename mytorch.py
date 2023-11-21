@@ -359,27 +359,8 @@ def train_epoch(dataload, model, compile_kw,
         # batch begin
         callbacklist.on_train_batch_begin(i + 1, logs=None)
 
-        # batch init
-        batch_logs = {}
-        batch_start_time = time.time()
-
-        # forward and back propagation
-        optimizer.zero_grad()
-        inputs, labels = data
-        # compute loss
-        loss, outputs, labels, loss_info_dict = compute_loss(inputs, labels, model, loss_fn, device, loss_weights)
-        loss.backward()
-        optimizer.step()
-
-        # collect loss
-        batch_logs.update(loss_info_dict)
-
-        # compute metric and collect metric
-        metric_info_dict = compute_metric(outputs, labels, metric_list)
-        batch_logs.update(metric_info_dict)
-
-        # collect batch time
-        batch_logs['time'] = time.time() - batch_start_time
+        # train step
+        batch_logs = train_step(data, compile_kw, model, device, loss_weights)
 
         # collect batch logs
         history_batch.update(batch_logs)
@@ -416,35 +397,13 @@ def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
             :key val_funcname_1_weight...:
             :key val_metric_metricName_1: float epoch metric calculate mean batch metric
     """
-    # compile_kw
-    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
-
     model.eval()
     # collect batch logs
     history_batch = History()
     with torch.no_grad():
         for i, vdata in enumerate(dataload):
-            # batch init
-            batch_logs = {}
-            batch_start_time = time.time()
-
-            # forward propagation
-            vinputs, vlabels = vdata
-            vloss, voutputs, vlabels, loss_info_dict = compute_loss(vinputs, vlabels, model, loss_fn, device,
-                                                                    loss_weights)
-
-            # collect loss
-            batch_logs.update(loss_info_dict)
-
-            # compute metric and collect metric
-            metric_info_dict = compute_metric(voutputs, vlabels, metric_list)
-            batch_logs.update(metric_info_dict)
-
-            # change name: add prefix 'val_' to key
-            batch_logs = tool.add_pre_or_suf_on_key_for_dict(batch_logs, 'val_')
-
-            # collect batch time
-            batch_logs['val_time'] = time.time() - batch_start_time
+            # test step
+            batch_logs = test_step(vdata, compile_kw, model, device, loss_weights)
 
             # collect batch logs
             history_batch.update(batch_logs)
@@ -453,6 +412,90 @@ def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
     val_epoch_logs = history_batch.mean(but_sum_for_keys=['val_time'])
 
     return val_epoch_logs
+
+
+def train_step(data, compile_kw, model, device, loss_weights=None):
+    """
+    Perform a single training step.
+
+    Args:
+        data (tuple): A tuple containing the inputs and labels for the batch.
+        compile_kw (dict): A dictionary containing the compilation parameters for the model.
+        model: The model to be trained.
+        device: The device on which the model and data should be loaded.
+        loss_weights (list, optional): A list of weights for each loss function. Defaults to None.
+
+    Returns:
+        dict: A dictionary containing the loss and metric information for the batch.
+    """
+    # batch init
+    batch_logs = {}
+    batch_start_time = time.time()
+
+    # compile_kw
+    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
+
+    # forward and back propagation
+    optimizer.zero_grad()
+    inputs, labels = data
+    # compute loss
+    loss, outputs, labels, loss_info_dict = compute_loss(inputs, labels, model, loss_fn, device, loss_weights)
+    loss.backward()
+    optimizer.step()
+
+    # collect loss
+    batch_logs.update(loss_info_dict)
+
+    # compute metric and collect metric
+    metric_info_dict = compute_metric(outputs, labels, metric_list)
+    batch_logs.update(metric_info_dict)
+
+    # collect batch time
+    batch_logs['time'] = time.time() - batch_start_time
+
+    return batch_logs
+
+
+def test_step(data, compile_kw, model, device, loss_weights=None):
+    """
+    Perform a single testing step.
+
+    Args:
+        data (tuple): A tuple containing the input data and labels.
+        compile_kw (dict): A dictionary containing the compilation keywords.
+        model: The model to be tested.
+        device: The device on which the testing will be performed.
+        loss_weights (list, optional): A list of loss weights. Defaults to None.
+
+    Returns:
+        dict: A dictionary containing the loss and metric information for the testing step.
+    """
+    # batch init
+    batch_logs = {}
+    batch_start_time = time.time()
+
+    # compile_kw
+    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
+
+    # forward propagation
+    vinputs, vlabels = data
+    vloss, voutputs, vlabels, loss_info_dict = compute_loss(vinputs, vlabels, model, loss_fn, device,
+                                                            loss_weights)
+
+    # collect loss
+    batch_logs.update(loss_info_dict)
+
+    # compute metric and collect metric
+    metric_info_dict = compute_metric(voutputs, vlabels, metric_list)
+    batch_logs.update(metric_info_dict)
+
+    # change name: add prefix 'val_' to key
+    batch_logs = tool.add_pre_or_suf_on_key_for_dict(batch_logs, 'val_')
+
+    # collect batch time
+    batch_logs['val_time'] = time.time() - batch_start_time
+
+    return batch_logs
 
 
 class MyHyperParameter:

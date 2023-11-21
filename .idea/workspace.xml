@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="54772fc1-644b-4ae1-9381-b87cc19f697b" name="变更" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/metric.py" beforeDir="false" afterPath="$PROJECT_DIR$/metric.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mytorch.py" beforeDir="false" afterPath="$PROJECT_DIR$/mytorch.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,7 +55,7 @@
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;settings.sync&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
@@ -222,6 +222,9 @@
       <workItem from="1700223763035" duration="222000" />
       <workItem from="1700231431578" duration="47000" />
       <workItem from="1700441084946" duration="693000" />
+      <workItem from="1700442040104" duration="60000" />
+      <workItem from="1700567186872" duration="954000" />
+      <workItem from="1700569026811" duration="47000" />
     </task>
     <servers />
   </component>
