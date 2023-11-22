@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="54772fc1-644b-4ae1-9381-b87cc19f697b" name="变更" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mytorch.py" beforeDir="false" afterPath="$PROJECT_DIR$/mytorch.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -357,7 +358,9 @@
       <workItem from="1700567186872" duration="954000" />
       <workItem from="1700569026811" duration="2389000" />
       <workItem from="1700574136227" duration="4234000" />
-      <workItem from="1700613312353" duration="5283000" />
+      <workItem from="1700613312353" duration="6240000" />
+      <workItem from="1700622056666" duration="739000" />
+      <workItem from="1700623018494" duration="3790000" />
     </task>
     <servers />
   </component>

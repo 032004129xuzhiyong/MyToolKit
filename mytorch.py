@@ -55,6 +55,7 @@ def parser_compile_kw(compile_kw):
         :key optimizer: torch.optim
         :key metric[optional]: func(outputs,labels) or List[func]
         :key scheduler[optional]: torch.optim.lr_scheduler
+        :key loss_weights[optional]: List[numeric] or None calculate weight loss for every output
     :return:
         loss_fn
         optimizer
@@ -63,12 +64,13 @@ def parser_compile_kw(compile_kw):
     """
     loss_fn, optimizer = compile_kw['loss'], compile_kw['optimizer']
     scheduler = compile_kw['scheduler'] if 'scheduler' in compile_kw.keys() else None
+    loss_weights = compile_kw['loss_weights'] if 'loss_weights' in compile_kw.keys() else None
     if 'metric' in compile_kw.keys():
         metric_list = compile_kw['metric'] if isinstance(compile_kw['metric'], (list, tuple)) else [
             compile_kw['metric']]
     else:  # None
         metric_list = []
-    return loss_fn, optimizer, scheduler, metric_list
+    return loss_fn, optimizer, scheduler, metric_list, loss_weights
 
 
 def get_optimizer_lr(optimizer):
@@ -254,7 +256,7 @@ def compute_metric(outputs, labels, metric_list):
 
 
 def fit(model, dataload, epochs, compile_kw,
-        device=None, val_dataload=None, loss_weights=None, callbacks=[],
+        device=None, val_dataload=None, callbacks=[],
         quiet=False):
     """
     similar to tf.keras.Model.fit
@@ -266,9 +268,9 @@ def fit(model, dataload, epochs, compile_kw,
         :key optimizer: torch.optim
         :key metric[optional]: func(outputs,labels) or List[func]
         :key scheduler[optional]: torch.optim.lr_scheduler
+        :key loss_weights[optional]: List[numeric] or None calculate weight loss for every output
     :param device: torch device
     :param val_dataload: torch.utils.data.DataLoader for validation
-    :param loss_weights: List[numeric] or None calculate weight loss for every output
     :param callbacks: List[Callback] or CallbackList similar to tf.keras.callbacks
     :return:
         history_epoch:
@@ -298,11 +300,11 @@ def fit(model, dataload, epochs, compile_kw,
         callbacklist.on_epoch_begin(epoch_index + 1, logs=None)
 
         # train one epoch
-        epoch_logs = train_epoch(dataload, model, compile_kw, device, loss_weights, callbacks=callbacklist)
+        epoch_logs = train_epoch(dataload, model, compile_kw, device, callbacks=callbacklist)
 
         # val one epoch
         if val_dataload is not None:
-            val_epoch_logs = val_epoch(val_dataload, model, compile_kw, device, loss_weights)
+            val_epoch_logs = val_epoch(val_dataload, model, compile_kw, device)
         else:
             val_epoch_logs = {}
 
@@ -321,7 +323,7 @@ def fit(model, dataload, epochs, compile_kw,
 
 
 def train_epoch(dataload, model, compile_kw,
-                device, loss_weights=None, callbacks=[]):
+                device, callbacks=[]):
     """
     train dataload for one epoch
     :param dataload: torch.utils.data.DataLoader for train
@@ -331,8 +333,8 @@ def train_epoch(dataload, model, compile_kw,
         :key optimizer: torch.optim
         :key metric[optional]: func(outputs,labels) or List[func]
         :key scheduler[optional]: torch.optim.lr_scheduler
+        :key loss_weights[optional]: List[numeric] or None calculate weight loss for every output
     :param device: torch device
-    :param loss_weights: List[numeric] or None calculate weight loss for every output
     :param callbacks: List[Callback] or CallbackList similar to tf.keras.callbacks
     :return:
         epoch_logs:
@@ -348,7 +350,7 @@ def train_epoch(dataload, model, compile_kw,
     callbacklist = callbacks if isinstance(callbacks, CallbackList) else CallbackList(callbacks)
 
     # compile_kw
-    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
+    loss_fn, optimizer, scheduler, metric_list, loss_weights = parser_compile_kw(compile_kw)
 
     # get current epoch lr
     cur_epoch_lr = get_optimizer_lr(optimizer)
@@ -361,7 +363,7 @@ def train_epoch(dataload, model, compile_kw,
         callbacklist.on_train_batch_begin(i + 1, logs=None)
 
         # train step
-        batch_logs = train_step(data, compile_kw, model, device, loss_weights)
+        batch_logs = train_step(data, compile_kw, model, device)
 
         # collect batch logs
         history_batch.update(batch_logs)
@@ -378,7 +380,7 @@ def train_epoch(dataload, model, compile_kw,
     return epoch_logs
 
 
-def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
+def val_epoch(dataload, model, compile_kw, device):
     """
     val or test dataload for one epoch
     :param dataload: torch.utils.data.DataLoader for validation
@@ -388,8 +390,8 @@ def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
         :key optimizer: torch.optim
         :key metric[optional]: func(outputs,labels) or List[func]
         :key scheduler[optional]: torch.optim.lr_scheduler
+        :key loss_weights[optional]: List[numeric] or None calculate weight loss for every output
     :param device: torch.device
-    :param loss_weights: List[numeric] or None calculate weight loss for every output
     :return:
         val_epoch_logs:
             :key val_time: float epoch time calculate sum batch time
@@ -404,7 +406,7 @@ def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
     with torch.no_grad():
         for i, vdata in enumerate(dataload):
             # test step
-            batch_logs = test_step(vdata, compile_kw, model, device, loss_weights)
+            batch_logs = test_step(vdata, compile_kw, model, device)
 
             # collect batch logs
             history_batch.update(batch_logs)
@@ -415,7 +417,7 @@ def val_epoch(dataload, model, compile_kw, device, loss_weights=None):
     return val_epoch_logs
 
 
-def train_step(data, compile_kw, model, device, loss_weights=None):
+def train_step(data, compile_kw, model, device):
     """
     Perform a single training step.
 
@@ -424,7 +426,6 @@ def train_step(data, compile_kw, model, device, loss_weights=None):
         compile_kw (dict): A dictionary containing the compilation parameters for the model.
         model: The model to be trained.
         device: The device on which the model and data should be loaded.
-        loss_weights (list, optional): A list of weights for each loss function. Defaults to None.
 
     Returns:
         dict: A dictionary containing the loss and metric information for the batch.
@@ -434,7 +435,7 @@ def train_step(data, compile_kw, model, device, loss_weights=None):
     batch_start_time = time.time()
 
     # compile_kw
-    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
+    loss_fn, optimizer, scheduler, metric_list, loss_weights = parser_compile_kw(compile_kw)
 
     # forward and back propagation
     optimizer.zero_grad()
@@ -457,7 +458,7 @@ def train_step(data, compile_kw, model, device, loss_weights=None):
     return batch_logs
 
 
-def test_step(data, compile_kw, model, device, loss_weights=None):
+def test_step(data, compile_kw, model, device):
     """
     Perform a single testing step.
 
@@ -466,7 +467,6 @@ def test_step(data, compile_kw, model, device, loss_weights=None):
         compile_kw (dict): A dictionary containing the compilation keywords.
         model: The model to be tested.
         device: The device on which the testing will be performed.
-        loss_weights (list, optional): A list of loss weights. Defaults to None.
 
     Returns:
         dict: A dictionary containing the loss and metric information for the testing step.
@@ -476,7 +476,7 @@ def test_step(data, compile_kw, model, device, loss_weights=None):
     batch_start_time = time.time()
 
     # compile_kw
-    loss_fn, optimizer, scheduler, metric_list = parser_compile_kw(compile_kw)
+    loss_fn, optimizer, scheduler, metric_list, loss_weights = parser_compile_kw(compile_kw)
 
     # forward propagation
     vinputs, vlabels = data
@@ -1123,10 +1123,11 @@ class MyTunerPrintCallback(Callback):
 
 
 class ExtendModel(nn.Module):
-    def compile(self, loss, optimizer, metric=None, scheduler=None):
+    def compile(self, loss, optimizer, metric=None, scheduler=None, loss_weights=None):
         self.loss_fn = loss
         self.optimizer = optimizer
         self.scheduler = scheduler
+        self.loss_weights = loss_weights
         if metric is None:
             self.metric_list = []
         elif isinstance(metric, (tuple, list)):
@@ -1138,13 +1139,11 @@ class ExtendModel(nn.Module):
             epochs,
             device=None,
             val_dataload=None,
-            loss_weights=None,
             callbacks=[],
             quiet=False):
         # init
         self.epochs = epochs
         self.device = device if device is not None else get_device()
-        self.loss_weights = loss_weights
         self.quiet = quiet
         steps_per_epoch = len(dataload)
         self.callbacklist = callbacks if isinstance(callbacks, CallbackList) else CallbackList(callbacks,
