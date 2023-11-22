@@ -1101,6 +1101,172 @@ class MyTunerPrintCallback(Callback):
         tool.print_dicts_tablefmt([cur_configdict,best_configdict],['Current','Best'])
 
 
+class WrapModel(nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        module_list = nn.ModuleList([model])
+        self.model = module_list[0]
+
+    def __call__(self, *args, **kwargs):
+        return self.forward(*args, **kwargs)
+
+    def forward(self, inputs):
+        return self.model(inputs)
+
+    def compile(self, loss, optimizer, metric=None, scheduler=None):
+        self.loss_fn = loss
+        self.optimizer = optimizer
+        self.scheduler = scheduler
+        if metric is None:
+            self.metric_list = []
+        elif isinstance(metric, (tuple, list)):
+            self.metric_list = metric
+        else:
+            self.metric_list = [metric]
+
+    def fit(self, dataload,
+            epochs,
+            device=None,
+            val_dataload=None,
+            loss_weights=None,
+            callbacks=[],
+            quiet=False):
+        # init
+        self.epochs = epochs
+        self.device = device if device is not None else get_device()
+        self.loss_weights = loss_weights
+        self.quiet = quiet
+        steps_per_epoch = len(dataload)
+        self.callbacklist = callbacks if isinstance(callbacks, CallbackList) else CallbackList(callbacks,
+                                            model=self, params={'optimizer': self.optimizer})
+        self.callbacklist.append(PrintCallback(epochs, steps_per_epoch,quiet=quiet)) # default
+
+        # train begin
+        history_epoch = History()
+        self.callbacklist.on_train_begin(logs=None)
+        for epoch_index in range(epochs):
+
+            # epoch begin
+            self.callbacklist.on_epoch_begin(epoch_index + 1, logs=None)
+
+            # train one epoch
+            epoch_logs = self.train_epoch(dataload)
+
+            # val one epoch
+            if val_dataload is not None:
+                val_epoch_logs = self.val_epoch(val_dataload)
+            else:
+                val_epoch_logs = {}
+
+            # collect epoch logs
+            history_epoch.update(epoch_logs)
+            history_epoch.update(val_epoch_logs)
+
+            # epoch end
+            epoch_logs.update(val_epoch_logs)
+            if self.callbacklist.on_epoch_end(epoch_index + 1, logs=epoch_logs): break
+
+        # train end
+        self.callbacklist.on_train_end(logs=None)
+
+        return history_epoch
+
+    def train_epoch(self, dataload):
+        # get current epoch lr
+        cur_epoch_lr = get_optimizer_lr(self.optimizer)
+
+        self.train()
+        history_batch = History()
+        for i, data in enumerate(dataload):
+            # batch begin
+            self.callbacklist.on_train_batch_begin(i + 1, logs=None)
+
+            # train step
+            batch_logs = self.train_step(data)
+
+            # collect batch logs
+            history_batch.update(batch_logs)
+
+            # batch end
+            self.callbacklist.on_train_batch_end(i + 1, logs=batch_logs)
+
+        # end for
+        epoch_logs = history_batch.mean(but_sum_for_keys=['time'])
+        epoch_logs['lr'] = cur_epoch_lr
+        # 调整学习率
+        if self.scheduler is not None: self.scheduler.step()
+
+        return epoch_logs
+
+    def val_epoch(self, val_dataload):
+        self.eval()
+        history_batch = History()
+        with torch.no_grad():
+            for i, vdata in enumerate(val_dataload):
+                # test step
+                batch_logs = self.test_step(vdata)
+
+                # collect batch logs
+                history_batch.update(batch_logs)
+
+        # end for
+        val_epoch_logs = history_batch.mean(but_sum_for_keys=['val_time'])
+
+        return val_epoch_logs
+
+    def train_step(self, data):
+        # batch init
+        batch_logs = {}
+        batch_start_time = time.time()
+
+        # forward and back propagation
+        self.optimizer.zero_grad()
+        inputs, labels = data
+        # compute loss
+        loss, outputs, labels, loss_info_dict = compute_loss(inputs, labels,
+                                                             self, self.loss_fn,
+                                                             self.device, self.loss_weights)
+        loss.backward()
+        self.optimizer.step()
+
+        # collect loss
+        batch_logs.update(loss_info_dict)
+
+        # compute metric and collect metric
+        metric_info_dict = compute_metric(outputs, labels, self.metric_list)
+        batch_logs.update(metric_info_dict)
+
+        # collect batch time
+        batch_logs['time'] = time.time() - batch_start_time
+
+        return batch_logs
+
+    def test_step(self, data):
+        # batch init
+        batch_logs = {}
+        batch_start_time = time.time()
+
+        # forward propagation and compute loss
+        vinputs, vlabels = data
+        vloss, voutputs, vlabels, loss_info_dict = compute_loss(vinputs, vlabels,
+                                                                self, self.loss_fn,
+                                                                self.device, self.loss_weights)
+        # collect loss
+        batch_logs.update(loss_info_dict)
+
+        # compute metric and collect metric
+        metric_info_dict = compute_metric(voutputs, vlabels, self.metric_list)
+        batch_logs.update(metric_info_dict)
+
+        # collect batch time
+        batch_logs['time'] = time.time() - batch_start_time
+
+        # change name: add prefix 'val_' to key
+        batch_logs = tool.add_pre_or_suf_on_key_for_dict(batch_logs, 'val_')
+
+        return batch_logs
+
+
 
 
 
