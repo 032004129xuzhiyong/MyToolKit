@@ -108,6 +108,8 @@ def get_topk(topk, return_correct_num=False):
         Returns:
             The top-k accuracy score.
         """
+        labels = labels.detach().numpy()
+        scores = scores.detach().numpy()
         if return_correct_num:
             num = metrics.top_k_accuracy_score(labels, scores, k=topk, normalize=False, labels=range(scores.shape[-1]))
             return num
@@ -117,36 +119,6 @@ def get_topk(topk, return_correct_num=False):
 
     setattr(topk_metric, '__qualname__', 'top' + str(topk))
     return topk_metric
-
-
-def auc_metric(scores, labels):
-    """
-    Computes the area under the ROC curve (AUC) score for a given set of predicted scores and true labels.
-
-    Args:
-        scores (torch.Tensor): A 2D tensor of predicted scores.
-        labels (torch.Tensor): A 1D tensor of true labels.
-
-    Returns:
-        The AUC score: The higher the better. Its range is [0, 1].
-    """
-    scores_softmax = F.softmax(scores, dim=1)
-    return metrics.roc_auc_score(labels, scores_softmax, multi_class='ovr')
-
-
-def roc_auc_score(scores, labels):
-    """
-    Computes the ROC AUC score for a given set of predicted scores and true labels.
-
-    Args:
-        scores (torch.Tensor): A 2D tensor of predicted scores.
-        labels (torch.Tensor): A 1D tensor of true labels.
-
-    Returns:
-        The ROC AUC score: The higher the better. Its range is [0, 1].
-    """
-    scores_softmax = F.softmax(scores, dim=1)
-    return metrics.roc_auc_score(labels, scores_softmax, multi_class='ovr')
 
 
 def matthews_corrcoef(scores, labels):
