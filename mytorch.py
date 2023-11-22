@@ -13,6 +13,7 @@ from mytool import plot
 import matplotlib.pyplot as plt
 import torch.nn as nn
 from torch.utils.data import Dataset
+from torch.utils.tensorboard import SummaryWriter
 import functools
 import random
 import copy
@@ -863,6 +864,26 @@ class PrintCallback(Callback):
             print_str += f' {key} {logs[key]}'
         if not self.quiet:
             print(print_str)
+
+
+class TbWriterCallback(Callback):
+    """
+    Add epoch_logs to SummaryWriter
+    """
+
+    def __init__(self, log_dir, **kwargs):
+        super().__init__(**kwargs)
+        self.log_dir = log_dir
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        self.tb_writer = SummaryWriter(os.path.join(log_dir, tool.get_datetime_name()))
+
+    def on_epoch_end(self, epoch, logs=None):
+        for key in logs.keys():
+            self.tb_writer.add_scalar('Epoch/' + key, logs[key], epoch)
+
+    def on_train_end(self, logs=None):
+        self.tb_writer.close()
 
 
 class DfSaveCallback(Callback):
