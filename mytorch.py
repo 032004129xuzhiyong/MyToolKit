@@ -1122,18 +1122,7 @@ class MyTunerPrintCallback(Callback):
         tool.print_dicts_tablefmt([cur_configdict,best_configdict],['Current','Best'])
 
 
-class WrapModel(nn.Module):
-    def __init__(self, model):
-        super().__init__()
-        module_list = nn.ModuleList([model])
-        self.model = module_list[0]
-
-    def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
-    def forward(self, inputs):
-        return self.model(inputs)
-
+class ExtendModel(nn.Module):
     def compile(self, loss, optimizer, metric=None, scheduler=None):
         self.loss_fn = loss
         self.optimizer = optimizer
@@ -1287,6 +1276,15 @@ class WrapModel(nn.Module):
 
         return batch_logs
 
+
+class WrapModel(ExtendModel):
+    def __init__(self, model):
+        super().__init__()
+        module_list = nn.ModuleList([model])
+        self.model = module_list[0]
+
+    def forward(self, inputs):
+        return self.model(inputs)
 
 
 
