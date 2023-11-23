@@ -14,6 +14,7 @@ import yaml
 import stat
 import shutil
 from tabulate import tabulate
+from benedict import benedict
 
 
 ###################################################################
@@ -229,21 +230,18 @@ def complete_dict_path(dict_args:Dict,work_dir:str,check_suffix:str='path'):
     return return_dict
 
 
-def remove_dict_None_value(dict_args):
+def remove_dict_None_value(dict_args, flat_sep='*'):
     """
-    remove None value from Dict
-    :param dict_args: Dict
+    remove None value in a config dictionary
+    :param dict_args: config dictionary
+    :param flat_sep: separator of flatten
     :return:
-        dict_args: Dict
+        completed config dictionary
     """
-    keys = dict_args.keys()
-    remove_keys = []
-    for key in keys:
-        if dict_args[key] == None:
-            remove_keys.append(key)
-    for key in remove_keys:
-        dict_args.pop(key)
-    return dict_args
+    return_dict = benedict(dict_args)
+    return_dict = return_dict.flatten(flat_sep).filter(lambda k,v: v is not None).unflatten(flat_sep)
+    return dict(return_dict)
+
 
 
 ###################################################################
@@ -381,4 +379,3 @@ def map_bytes_to_str(x_or_li):
         return list(map(map_bytes_to_str,x_or_li))
     else:
         raise Exception('must contain bytes!!')
-
