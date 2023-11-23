@@ -238,9 +238,15 @@ def remove_dict_None_value(dict_args, flat_sep='*'):
     :return:
         completed config dictionary
     """
+    return_benedict = False
+    if isinstance(dict_args,benedict):
+        return_benedict = True
     return_dict = benedict(dict_args)
     return_dict = return_dict.flatten(flat_sep).filter(lambda k,v: v is not None).unflatten(flat_sep)
-    return dict(return_dict)
+    if return_benedict:
+        return return_dict
+    else:
+        return dict(return_dict)
 
 
 
