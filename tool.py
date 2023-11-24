@@ -163,6 +163,15 @@ def modify_dict_with_hp(config_dict, hp, bool_tuner=True):
 
 
 def modify_dict_with_trial(args, trial:Union[optuna.trial.Trial,optuna.trial.FrozenTrial]):
+    """
+    modify config_dict with hyperparameters for searching of optuna.
+    Args:
+        args: config dictionary
+        trial: optuna.trial.Trial or optuna.trial.FrozenTrial
+
+    Returns:
+        modified config_dict
+    """
     for key in args.keys():
         value = args[key]
         if isinstance(value, dict):
@@ -191,6 +200,15 @@ def modify_dict_with_trial(args, trial:Union[optuna.trial.Trial,optuna.trial.Fro
 
 
 def config_dict_list_sort_with_argidx(config_dict_list, argidx):
+    """
+    sort config_dict_list with argidx
+    Args:
+        config_dict_list: List[Dict]
+        argidx: List[int]
+
+    Returns:
+        sorted config_dict_list
+    """
     return_list = []
     for arg in argidx:
         return_list.append(config_dict_list[int(arg)])
