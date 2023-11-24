@@ -1139,7 +1139,7 @@ class PruningCallback(Callback):
             raise optuna.TrialPruned()
 
 
-class StudyStopWhenTrialKeepBeingPrunedCallback(Callback):
+class StudyStopWhenTrialKeepBeingPrunedCallback:
     def __init__(self, threshold: int=20, **kwargs):
         super().__init__(**kwargs)
         self.threshold = threshold
