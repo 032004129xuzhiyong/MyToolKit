@@ -895,8 +895,8 @@ class WrapModel(ExtendModel):
         super().__init__()
         module_list = nn.ModuleList([model])
         self.model = module_list[0]
-        for attr_name in self.model.__dir__():
-            attr = getattr(self.model, attr_name)
+        for attr_name in model.__dir__():
+            attr = getattr(model, attr_name)
             if attr_name.startswith('__') or attr_name.endswith('__') \
                 or attr_name in ['forward']:
                 continue
