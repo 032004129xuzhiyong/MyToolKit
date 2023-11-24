@@ -12,7 +12,7 @@ import torch
 import optuna
 from . import plot
 from . import tool
-from .mytorch import History, get_optimizer_lr, set_optimizer_lr
+from mytorch import History, get_optimizer_lr, set_optimizer_lr
 
 
 class Callback:
