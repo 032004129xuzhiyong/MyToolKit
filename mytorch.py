@@ -16,8 +16,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.utils.tensorboard import SummaryWriter
 import functools
-import random
 import copy
+from typing import *
 
 def get_device():
     """
@@ -779,10 +779,14 @@ class CallbackList(Callback):
             if self.params is not None: cal.set_params(self.params)
             if self.model is not None: cal.set_model(self.model)
 
-    def append(self, callback):
-        if self.params is not None: callback.set_params(self.params)
-        if self.model is not None: callback.set_model(self.model)
-        self.callbacks.append(callback)
+    def append(self, callback: Union[Callback, List[Callback]]):
+        if isinstance(callback, Callback):
+            callback = [callback]
+
+        for cal in callback:
+            if self.params is not None: cal.set_params(self.params)
+            if self.model is not None: cal.set_model(self.model)
+            self.callbacks.append(cal)
 
     def on_train_begin(self, logs=None):
         for cal in self.callbacks:
