@@ -12,7 +12,7 @@ import torch
 import optuna
 from . import plot
 from . import tool
-from mytorch import History, get_optimizer_lr, set_optimizer_lr
+from . import mytorch
 
 
 class Callback:
@@ -104,7 +104,7 @@ class PrintCallback(Callback):
         self.batch_sep = batch_sep
         self.if_micro_average = if_micro_average
         self.quiet = quiet
-        self.micro_batch_history = History()
+        self.micro_batch_history = mytorch.History()
 
     def on_train_begin(self, logs=None):
         if not self.quiet:
@@ -176,7 +176,7 @@ class DfSaveCallback(Callback):
         basedir = os.path.dirname(df_save_path)
         if not os.path.exists(basedir):
             os.makedirs(basedir)
-        self.epoch_history = History()
+        self.epoch_history = mytorch.History()
 
     def on_epoch_end(self, epoch, logs=None):
         self.epoch_history.update(logs)
@@ -301,12 +301,12 @@ class SchedulerWrapCallback(Callback):
         super().__init__(**kwargs)
         self.scheduler_func = scheduler_func
         self.manual = manual
-        self.epoch_history = History()
+        self.epoch_history = mytorch.History()
         self.argcount = self.scheduler_func.__code__.co_argcount
 
     def on_epoch_end(self, epoch, logs=None):
         self.epoch_history.update(logs)
-        cur_epoch, cur_lr, cur_epoch_logs = epoch, get_optimizer_lr(self.params['optimizer']), logs
+        cur_epoch, cur_lr, cur_epoch_logs = epoch, mytorch.get_optimizer_lr(self.params['optimizer']), logs
         util_now_epoch_history = self.epoch_history
         if self.argcount == 1:
             new_lr = self.scheduler_func(cur_epoch)
@@ -322,7 +322,7 @@ class SchedulerWrapCallback(Callback):
             return
         else:
             assert new_lr is not None
-            set_optimizer_lr(self.params['optimizer'], new_lr)
+            mytorch.set_optimizer_lr(self.params['optimizer'], new_lr)
 
 
 class PlotLossMetricTimeLr(Callback):
@@ -332,7 +332,7 @@ class PlotLossMetricTimeLr(Callback):
         self.metric_check = metric_check
         self.time_check = time_check
         self.lr_check = lr_check
-        self.epoch_history = History()
+        self.epoch_history = mytorch.History()
 
     def on_epoch_end(self, epoch, logs=None):
         self.epoch_history.update(logs)
