@@ -1139,6 +1139,22 @@ class PruningCallback(Callback):
             raise optuna.TrialPruned()
 
 
+class StudyStopWhenTrialKeepBeingPrunedCallback(Callback):
+    def __init__(self, threshold: int=20, **kwargs):
+        super().__init__(**kwargs)
+        self.threshold = threshold
+        self._consequtive_pruned_count = 0
+
+    def __call__(self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        if trial.state == optuna.trial.TrialState.PRUNED:
+            self._consequtive_pruned_count += 1
+        else:
+            self._consequtive_pruned_count = 0
+
+        if self._consequtive_pruned_count >= self.threshold:
+            study.stop()
+
+
 class ExtendModel(nn.Module):
     def compile(self, loss, optimizer, metric=None, scheduler=None, loss_weights=None):
         self.loss_fn = loss
