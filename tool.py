@@ -15,6 +15,7 @@ import stat
 import shutil
 from tabulate import tabulate
 from benedict import benedict
+import optuna
 
 
 ###################################################################
@@ -159,6 +160,34 @@ def modify_dict_with_hp(config_dict, hp, bool_tuner=True):
         else: #一个数
             pass
     return config_dict
+
+
+def modify_dict_with_trial(args, trial:Union[optuna.trial.Trial,optuna.trial.FrozenTrial]):
+    for key in args.keys():
+        value = args[key]
+        if isinstance(value, dict):
+            if 'type' in value.keys(): # need modified
+                cls = value['type']
+                value.pop('type')
+                if cls == 'int': # low high step log
+                    args[key] = trial.suggest_int(key,**value)
+                elif cls == 'float': # low high step log
+                    args[key] = trial.suggest_float(key,**value)
+                elif cls == 'discrete_uniform': # low high q
+                    args[key] = trial.suggest_discrete_uniform(key,**value)
+                elif cls == 'uniform': # low high
+                    args[key] = trial.suggest_uniform(key,**value)
+                elif cls == 'loguniform': # low high
+                    args[key] = trial.suggest_loguniform(key,**value)
+                elif cls == 'categorical': # choices
+                    args[key] = trial.suggest_categorical(key,**value)
+                else:
+                    raise ValueError('cls must be in [int, float, discrete_uniform, uniform, loguniform, categorical]')
+            else:
+                args[key] = modify_dict_with_trial(value, trial)
+        else:
+            pass
+    return args
 
 
 def config_dict_list_sort_with_argidx(config_dict_list, argidx):

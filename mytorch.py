@@ -4,6 +4,7 @@
 日期：2023年10月23日
 """
 import time
+import optuna
 import torch
 import os
 import numpy as np
@@ -1122,6 +1123,18 @@ class MyTunerPrintCallback(Callback):
         tool.print_dicts_tablefmt([cur_configdict,best_configdict],['Current','Best'])
 
 
+class PruningCallback(Callback):
+    def __init__(self, trial: optuna.trial.Trial, monitor:str, **kwargs):
+        super().__init__(**kwargs)
+        self.trial = trial
+        self.monitor = monitor
+
+    def on_epoch_end(self, epoch, logs=None):
+        self.trial.report(logs[self.monitor], epoch)
+        if self.trial.should_prune():
+            raise optuna.TrialPruned()
+
+
 class ExtendModel(nn.Module):
     def compile(self, loss, optimizer, metric=None, scheduler=None, loss_weights=None):
         self.loss_fn = loss
@@ -1147,7 +1160,7 @@ class ExtendModel(nn.Module):
         self.quiet = quiet
         steps_per_epoch = len(dataload)
         self.callbacklist = callbacks if isinstance(callbacks, CallbackList) else CallbackList(callbacks,
-                                            model=self, params={'optimizer': self.optimizer})
+                                                                                               model=self, params={'optimizer': self.optimizer})
         self.callbacklist.append(PrintCallback(epochs, steps_per_epoch,quiet=quiet)) # default
 
         # train begin
