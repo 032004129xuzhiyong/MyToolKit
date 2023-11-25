@@ -234,7 +234,9 @@ def transform_dict_to_search_space(args):
                 else:
                     raise ValueError('cls must be in [int, float, discrete_uniform, uniform, loguniform, categorical]')
             else:
-                search_space[key] = transform_dict_to_search_space(value)
+                deep_return = transform_dict_to_search_space(value)
+                if len(deep_return.keys()) > 0:
+                    search_space[key] = deep_return
         else:
             pass
 
