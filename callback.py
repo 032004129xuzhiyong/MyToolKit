@@ -415,7 +415,7 @@ class PruningCallback(Callback):
             raise optuna.TrialPruned()
 
     def on_train_end(self, logs=None):
-        self.trial.set_user_attr('epoch_history',self.epoch_history.history)
+        self.trial.set_user_attr('epoch_history',pd.DataFrame(self.epoch_history.history).to_dict('list'))
 
 
 class StudyStopWhenTrialKeepBeingPrunedCallback:
