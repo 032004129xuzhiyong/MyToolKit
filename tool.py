@@ -220,17 +220,17 @@ def transform_dict_to_search_space(args):
                 value.pop('type')
                 if cls == 'int':
                     step = value['step'] if 'step' in value.keys() else 1
-                    search_space[key] = np.arange(value['low'],value['high'],step)
+                    search_space[key] = np.arange(value['low'],value['high'],step).tolist()
                 elif cls == 'float':
                     step = value['step'] if 'step' in value.keys() else 1.0
-                    search_space[key] = np.arange(value['low'],value['high'],step)
+                    search_space[key] = np.arange(value['low'],value['high'],step).tolist()
                 elif cls == 'discrete_uniform':
                     step = value['q'] if 'q' in value.keys() else 1.0
-                    search_space[key] = np.arange(value['low'],value['high'],step)
+                    search_space[key] = np.arange(value['low'],value['high'],step).tolist()
                 elif cls == 'uniform':
-                    search_space[key] = np.linspace(value['low'],value['high'],10)
+                    search_space[key] = np.linspace(value['low'],value['high'],10).tolist()
                 elif cls == 'loguniform':
-                    search_space[key] = np.logspace(value['low'],value['high'],10)
+                    search_space[key] = np.logspace(value['low'],value['high'],10).tolist()
                 elif cls == 'category':
                     search_space[key] = value['choices']
                 else:
@@ -246,7 +246,8 @@ def transform_dict_to_search_space(args):
     search_space = benedict(search_space).flatten('*')
     for key in search_space.keys():
         new_key = key.split('*')[-1]
-        return_dict[new_key] = search_space[key]
+        value = search_space[key]
+        return_dict[new_key] = value
     return return_dict
 
 
