@@ -339,7 +339,7 @@ class PlotLossMetricTimeLr(Callback):
 
     def on_train_end(self, logs=None):
         df = pd.DataFrame(self.epoch_history.history)
-        fig = plot.plot_LossMetricTimeLr_with_df(df)
+        fig = plot.plot_LossMetricTimeLr_with_df(df,self.loss_check,self.metric_check,self.time_check,self.lr_check)
         plt.show()
 
 
@@ -406,11 +406,16 @@ class PruningCallback(Callback):
         super().__init__(**kwargs)
         self.trial = trial
         self.monitor = monitor
+        self.epoch_history = mytorch.History()
 
     def on_epoch_end(self, epoch, logs=None):
+        self.epoch_history.update(logs)
         self.trial.report(logs[self.monitor], epoch)
         if self.trial.should_prune():
             raise optuna.TrialPruned()
+
+    def on_train_end(self, logs=None):
+        self.trial.set_user_attr('epoch_history',self.epoch_history.history)
 
 
 class StudyStopWhenTrialKeepBeingPrunedCallback:
