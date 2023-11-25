@@ -17,6 +17,7 @@ import shutil
 from tabulate import tabulate
 from benedict import benedict
 import optuna
+import copy
 
 
 ###################################################################
@@ -209,6 +210,7 @@ def transform_dict_to_search_space(args):
     Returns:
         search_space: search_space for optuna. Dict
     """
+    args = copy.deepcopy(args)
     search_space = {}
     for key in args.keys():
         value = args[key]
