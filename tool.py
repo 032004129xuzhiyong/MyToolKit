@@ -349,7 +349,7 @@ def remove_dict_None_value(dict_args, flat_sep='*'):
     :return:
         completed config dictionary
     """
-    remove_dict_something_value(dict_args,None,flat_sep)
+    return remove_dict_something_value(dict_args,None,flat_sep)
 
 
 
