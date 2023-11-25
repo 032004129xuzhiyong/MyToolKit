@@ -10,6 +10,7 @@ import os
 from typing import *
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import yaml
 import stat
 import shutil
@@ -199,6 +200,47 @@ def modify_dict_with_trial(args, trial:Union[optuna.trial.Trial,optuna.trial.Fro
     return args
 
 
+def transform_dict_to_search_space(args):
+    """
+    transform config_dict to search_space for optuna.
+    Args:
+        args: config dictionary
+
+    Returns:
+        search_space: search_space for optuna. Dict
+    """
+    search_space = {}
+    for key in args.keys():
+        value = args[key]
+        if isinstance(value, dict):
+            if 'type' in value.keys():
+                cls = value['type']
+                value.pop('type')
+                if cls == 'int':
+                    step = value['step'] if 'step' in value.keys() else 1
+                    search_space[key] = np.arange(value['low'],value['high'],step)
+                elif cls == 'float':
+                    step = value['step'] if 'step' in value.keys() else 1.0
+                    search_space[key] = np.arange(value['low'],value['high'],step)
+                elif cls == 'discrete_uniform':
+                    step = value['q'] if 'q' in value.keys() else 1.0
+                    search_space[key] = np.arange(value['low'],value['high'],step)
+                elif cls == 'uniform':
+                    search_space[key] = np.linspace(value['low'],value['high'],10)
+                elif cls == 'loguniform':
+                    search_space[key] = np.logspace(value['low'],value['high'],10)
+                elif cls == 'category':
+                    search_space[key] = value['choices']
+                else:
+                    raise ValueError('cls must be in [int, float, discrete_uniform, uniform, loguniform, categorical]')
+            else:
+                search_space[key] = transform_dict_to_search_space(value)
+        else:
+            pass
+
+    return search_space
+
+
 def config_dict_list_sort_with_argidx(config_dict_list, argidx):
     """
     sort config_dict_list with argidx
@@ -277,10 +319,11 @@ def complete_dict_path(dict_args:Dict,work_dir:str,check_suffix:str='path'):
     return return_dict
 
 
-def remove_dict_None_value(dict_args, flat_sep='*'):
+def remove_dict_something_value(dict_args, something, flat_sep='*'):
     """
-    remove None value in a config dictionary
+    remove something value in a config dictionary
     :param dict_args: config dictionary
+    :param something: something value
     :param flat_sep: separator of flatten
     :return:
         completed config dictionary
@@ -289,11 +332,22 @@ def remove_dict_None_value(dict_args, flat_sep='*'):
     if isinstance(dict_args,benedict):
         return_benedict = True
     return_dict = benedict(dict_args)
-    return_dict = return_dict.flatten(flat_sep).filter(lambda k,v: v is not None).unflatten(flat_sep)
+    return_dict = return_dict.flatten(flat_sep).filter(lambda k,v: v != something).unflatten(flat_sep)
     if return_benedict:
         return return_dict
     else:
-        return dict(return_dict)
+        return return_dict.dict()
+
+
+def remove_dict_None_value(dict_args, flat_sep='*'):
+    """
+    remove None value in a config dictionary
+    :param dict_args: config dictionary
+    :param flat_sep: separator of flatten
+    :return:
+        completed config dictionary
+    """
+    remove_dict_something_value(dict_args,None,flat_sep)
 
 
 
