@@ -242,7 +242,12 @@ def transform_dict_to_search_space(args):
         else:
             pass
 
-    return search_space
+    return_dict = {}
+    search_space = benedict(search_space).flatten('*')
+    for key in search_space.keys():
+        new_key = key.split('*')[-1]
+        return_dict[new_key] = search_space[key]
+    return return_dict
 
 
 def config_dict_list_sort_with_argidx(config_dict_list, argidx):
