@@ -416,7 +416,7 @@ def plot_lines_with_compare_data(ax, x, y_2D_np=None, labels=None,
 
 def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
                                 xlabel=None, ylabel=None, title=None,
-                                tick_span=None, group_gap=0.2, bar_gap=0, **kwargs):
+                                tick_span=None, group_gap_percent=0.2, bar_gap_percent=0, **kwargs):
     """
     When comparing the experimental data of different algorithms that have a common x-axis,
     Args:
@@ -429,8 +429,8 @@ def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
         ylabel: str
         title: str
         tick_span: int/float
-        group_gap: int/float
-        bar_gap: int/float
+        group_gap_percent: float [0,1]
+        bar_gap_percent: float [0,1]
         **kwargs: for bar method
     Returns:
         ax: Axes
@@ -444,19 +444,25 @@ def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
     nline = y_2D_np.shape[1]
     assert nline == len(labels)
 
+    # get tick_span
+    if tick_span is None:
+        if isinstance(x[0], str):
+            tick_span = 1
+        elif isinstance(x[0], int):
+            tick_span = int(np.mean(np.diff(x)))
+        elif isinstance(x[0], float):
+            tick_span = np.mean(np.diff(x))
+        else:
+            raise Exception('can not compute tick_span. x must be int/float/str')
     # compute bar width and bar_span and base_x
-    if isinstance(x[0], str):
-        tick_span = 1
-    elif isinstance(x[0], int):
-        tick_span = int(np.mean(np.diff(x)))
-    elif isinstance(x[0], float):
-        tick_span = np.mean(np.diff(x))
-    else:
-        raise Exception('can not compute tick_span. x must be int/float/str')
     ticks = np.array(x) #np.arange(len(x))
     group_num = y_2D_np.shape[1]
+    # get group_gap
+    group_gap = tick_span * group_gap_percent
     group_width = tick_span - group_gap
     bar_span = group_width / group_num
+    # get bar_gap
+    bar_gap = bar_span * bar_gap_percent
     bar_width = bar_span - bar_gap
     base_x = ticks - (group_width - bar_span) / 2
     for ind, y in enumerate(y_2D_np.T):
