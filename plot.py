@@ -416,7 +416,7 @@ def plot_lines_with_compare_data(ax, x, y_2D_np=None, labels=None,
 
 def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
                                 xlabel=None, ylabel=None, title=None,
-                                tick_span=1, group_gap=0.2, bar_gap=0, **kwargs):
+                                tick_span=None, group_gap=0.2, bar_gap=0, **kwargs):
     """
     When comparing the experimental data of different algorithms that have a common x-axis,
     Args:
@@ -445,6 +445,14 @@ def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
     assert nline == len(labels)
 
     # compute bar width and bar_span and base_x
+    if isinstance(x[0], str):
+        tick_span = 1
+    elif isinstance(x[0], int):
+        tick_span = int(np.mean(np.diff(x)))
+    elif isinstance(x[0], float):
+        tick_span = np.mean(np.diff(x))
+    else:
+        raise Exception('can not compute tick_span. x must be int/float/str')
     ticks = np.array(x) #np.arange(len(x))
     group_num = y_2D_np.shape[1]
     group_width = tick_span - group_gap
