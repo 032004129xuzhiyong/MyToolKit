@@ -445,7 +445,7 @@ def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
     assert nline == len(labels)
 
     # compute bar width and bar_span and base_x
-    ticks = np.arange(len(x))
+    ticks = np.array(x) #np.arange(len(x))
     group_num = y_2D_np.shape[1]
     group_width = tick_span - group_gap
     bar_span = group_width / group_num
