@@ -414,6 +414,63 @@ def plot_lines_with_compare_data(ax, x, y_2D_np=None, labels=None,
     return ax
 
 
+def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
+                                xlabel=None, ylabel=None, title=None,
+                                tick_span=1, group_gap=0.2, bar_gap=0, **kwargs):
+    """
+    When comparing the experimental data of different algorithms that have a common x-axis,
+    Args:
+        ax: Axes
+        x: 1-D [xlen,] xaxis data
+            or  2-D [xlen,nline+1] pd.DataFrame the first column is x, and others are y_2D_np
+        y_2D_np: 2-D [xlen, nline] yaxis data
+        labels: 1-D [nline,] data label
+        xlabel: str
+        ylabel: str
+        title: str
+        tick_span: int/float
+        group_gap: int/float
+        bar_gap: int/float
+        **kwargs: for bar method
+    Returns:
+        ax: Axes
+    """
+    if isinstance(x,pd.DataFrame):
+        y_2D_np = x.iloc[:, 1:].to_numpy()
+        labels = x.columns[1:]
+        x = x.iloc[:,0].to_list()
+
+    assert len(x) == y_2D_np.shape[0]
+    nline = y_2D_np.shape[1]
+    assert nline == len(labels)
+
+    # compute bar width and bar_span and base_x
+    ticks = np.arange(len(x))
+    group_num = y_2D_np.shape[1]
+    group_width = tick_span - group_gap
+    bar_span = group_width / group_num
+    bar_width = bar_span - bar_gap
+    base_x = ticks - (group_width - bar_span) / 2
+    for ind, y in enumerate(y_2D_np.T):
+        ax.bar(base_x + ind * bar_span, y, width=bar_width, label=labels[ind], alpha=0.8, **kwargs)
+    # grid
+    ax.grid(ls=':', lw=2, color='0.8')
+
+    # label
+    if xlabel is not None: ax.set_xlabel(xlabel,fontdict=get_font_dict(size=15))
+    if ylabel is not None: ax.set_ylabel(ylabel,fontdict=get_font_dict(size=15))
+    if title is not None: ax.set_title(title,fontdict=get_font_dict(size=20))
+
+    # ticker
+    ax.set_xticks(x)
+    ax = ax_tick_params(ax, length=4, width=3)
+
+    #set spines
+    for loc in ['bottom','top','left','right']:
+        ax.spines[loc].set(lw=2)
+    return ax
+
+
 def plot_LossMetricTimeLr_with_df(df,
                                   loss_check='loss',
                                   metric_check='metric',
@@ -528,15 +585,13 @@ if __name__ == '__main__':
 
     ###
     ax3 = fig.add_subplot(133)
-    nline = 5
-    x = np.arange(30)
-    y1ndarray = np.cumsum(np.random.randn(x.shape[0],nline),axis=1)
+    nline = 3
+    x = np.arange(6)
+    y1ndarray = np.cumsum(np.random.rand(x.shape[0],nline),axis=1)
     label = [str(i+1) for i in range(nline)]
     # plot_lines_with_compare_data(ax3,x,y1ndarray,label,'epoch','loss', 'sources')
     df = pd.DataFrame(np.concatenate([x[:,np.newaxis],y1ndarray],axis=1),columns=['x']+label)
-    plot_lines_with_compare_data(ax3,df)
+    plot_bars_with_compare_data(ax3,df)
     ax3.legend()
 
     plt.show()
-
-
