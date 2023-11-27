@@ -466,7 +466,7 @@ def plot_bars_with_compare_data(ax: plt.Axes, x, y_2D_np=None, labels=None,
     bar_width = bar_span - bar_gap
     base_x = ticks - (group_width - bar_span) / 2
     for ind, y in enumerate(y_2D_np.T):
-        ax.bar(base_x + ind * bar_span, y, width=bar_width, label=labels[ind], alpha=0.8, **kwargs)
+        ax.bar(base_x + ind * bar_span, y, width=bar_width, label=labels[ind], alpha=0.8, ec='k', **kwargs)
     # grid
     ax.grid(ls=':', lw=2, color='0.8')
 
