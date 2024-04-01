@@ -4,6 +4,7 @@
 日期：2023年10月23日
 """
 import time
+import re
 import torch
 import numpy as np
 from mytool import tool
@@ -531,6 +532,49 @@ class History:
             else:
                 mean_dict[key] = np.mean(self.history[key])
         return mean_dict
+
+    def std(self):
+        """
+        calculate std value for every key which has float or int values
+        :return:
+            std_dict
+        """
+        std_dict = {}
+        for key in self.history.keys():
+            value = self.history[key]
+            if len(value) >= 1 and isinstance(value[0], (int, float)):
+                std_dict[key] = np.std(value)
+            else:
+                std_dict[key] = None
+        return std_dict
+
+    def sub_history(self, keys):
+        """
+        :param keys: List[str]
+        :return:
+            sub-history
+        """
+        subdict = {}
+        subhistory = History()
+        if isinstance(keys, str): keys = [keys]
+        for key in keys:
+            subdict[key] = self.history[key]
+        subhistory.history = subdict
+        return subhistory
+
+    def sub_search_key_history(self, Ere_str):
+        """
+        :param Ere_str: str
+        :return:
+            sub-history
+        """
+        subdict = {}
+        subhistory = History()
+        for key in self.history.keys():
+            if re.search(Ere_str,key):
+                subdict[key] = self.history[key]
+        subhistory.history = subdict
+        return subhistory
 
 
 class ExtendModel(nn.Module):
