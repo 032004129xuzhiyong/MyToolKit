@@ -541,11 +541,7 @@ class History:
         """
         std_dict = {}
         for key in self.history.keys():
-            value = self.history[key]
-            if len(value) >= 1 and isinstance(value[0], (int, float)):
-                std_dict[key] = np.std(value)
-            else:
-                std_dict[key] = None
+            std_dict[key] = np.std(self.history[key])
         return std_dict
 
     def sub_history(self, keys):
