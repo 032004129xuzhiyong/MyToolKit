@@ -528,9 +528,9 @@ class History:
         if isinstance(but_sum_for_keys, str): but_sum_for_keys = [but_sum_for_keys]
         for key in self.history.keys():
             if key in but_sum_for_keys:
-                mean_dict[key] = np.sum(self.history[key])
+                mean_dict[key] = float(np.sum(self.history[key]))
             else:
-                mean_dict[key] = np.mean(self.history[key])
+                mean_dict[key] = float(np.mean(self.history[key]))
         return mean_dict
 
     def std(self):
@@ -541,7 +541,7 @@ class History:
         """
         std_dict = {}
         for key in self.history.keys():
-            std_dict[key] = np.std(self.history[key])
+            std_dict[key] = float(np.std(self.history[key]))
         return std_dict
 
     def sub_history(self, keys):
