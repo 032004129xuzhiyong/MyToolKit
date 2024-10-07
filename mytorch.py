@@ -172,7 +172,7 @@ def compute_single_metric(output, label, metric_func):
         :key metric_dict: Dict
             :key metric_name: metric_value
     """
-    ndoutputs, ndlabels = output.cpu(), label.cpu()
+    ndoutputs, ndlabels = tensor_to_device(output, 'cpu'), tensor_to_device(label, 'cpu')
     metric_value = metric_func(ndoutputs, ndlabels)
     metric_name = tool.get_func_name(metric_func)
     return {metric_name: metric_value}
